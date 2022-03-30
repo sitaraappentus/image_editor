@@ -1,6 +1,7 @@
 import 'dart:io';
+import 'dart:math';
+import 'package:custom_image_crop/custom_image_crop.dart';
 import 'package:flutter/material.dart';
-import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
 void main() {
@@ -29,8 +30,21 @@ class MyPickImageScreen extends StatefulWidget {
 }
 
 class _MyPickImageScreenState extends State<MyPickImageScreen> {
-  var imgFile;
+  File? imgFile;
   final imgPicker = ImagePicker();
+  late CustomImageCropController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = CustomImageCropController();
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
 
   Future<void> showOptionsDialog(BuildContext context) {
     return showDialog(
@@ -66,7 +80,7 @@ class _MyPickImageScreenState extends State<MyPickImageScreen> {
     setState(() {
       imgFile = File(imgCamera!.path);
     });
-    cropImage(imgCamera!.path);
+    //cropImage(imgCamera!.path);
     Navigator.of(context).pop();
   }
 
@@ -75,42 +89,48 @@ class _MyPickImageScreenState extends State<MyPickImageScreen> {
     setState(() {
       imgFile = File(imgGallery!.path);
     });
-    cropImage(imgGallery!.path);
+    //cropImage(imgGallery!.path);
     Navigator.of(context).pop();
   }
 
-  void cropImage(filePath) async {
-    File? croppedFile = await ImageCropper().cropImage(
-      sourcePath: filePath,
-      maxHeight: 512,
-      maxWidth: 512,
-      cropStyle: CropStyle.rectangle,
-      androidUiSettings: const AndroidUiSettings(
-        toolbarTitle: 'Edit Image',
-        toolbarColor: Colors.white,
-        toolbarWidgetColor: Colors.black,
-        lockAspectRatio: true,
-        hideBottomControls: true,
-        showCropGrid: false,
-        cropGridColor: Colors.transparent,
-        cropFrameStrokeWidth: 0,
-        dimmedLayerColor: Colors.transparent,
-        cropFrameColor: Colors.transparent
-      ),
+  /*void cropImage(filePath) {
+    CustomImageCrop customImageCrop = CustomImageCrop(
+      cropController: controller,
+      image: AssetImage(filePath),
+      shape: CustomCropShape.Circle,
     );
-    if (croppedFile != null) {
-      setState(() {
-        imgFile = croppedFile;
-      });
+    if (customImageCrop != null) {
+      Row(
+        children: [
+          IconButton(icon: const Icon(Icons.refresh), onPressed: controller.reset),
+          IconButton(icon: const Icon(Icons.zoom_in), onPressed: () => controller.addTransition(CropImageData(scale: 1.33))),
+          IconButton(icon: const Icon(Icons.zoom_out), onPressed: () => controller.addTransition(CropImageData(scale: 0.75))),
+          IconButton(icon: const Icon(Icons.rotate_left), onPressed: () => controller.addTransition(CropImageData(angle: -pi / 4))),
+          IconButton(icon: const Icon(Icons.rotate_right), onPressed: () => controller.addTransition(CropImageData(angle: pi / 4))),
+          IconButton(
+            icon: const Icon(Icons.crop),
+            onPressed: () async {
+              final image = await controller.onCropImage();
+              if (image != null) {
+                setState(() {
+                  imgFile = image;
+                });
+              }
+            },
+          ),
+        ],
+      );
+    } else {
+      print('some text');
     }
-  }
+  }*/
 
   Widget displayImage() {
     if (imgFile == null) {
       return const Text("No Image Selected!");
     } else {
       return Image.file(
-        imgFile,
+        imgFile!,
         height: 300,
       );
     }
@@ -127,13 +147,13 @@ class _MyPickImageScreenState extends State<MyPickImageScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             displayImage(),
-            const SizedBox(height: 30),
             ElevatedButton(
               onPressed: () {
                 showOptionsDialog(context);
               },
               child: const Text("Select Image"),
             ),
+            SizedBox(height: MediaQuery.of(context).padding.bottom),
           ],
         ),
       ),
